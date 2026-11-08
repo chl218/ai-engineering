@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 1: Single call, workflow, or agent?</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<header class="lesson-head">
+  <p class="kicker">AI Engineering &middot; Lesson 1 &middot; about 25 minutes</p>
+  <h1>Single call, workflow, or agent?</h1>
+  <p class="lede">The first design decision in every LLM product, and the one interviewers ask about most.</p>
+
+  <div class="mission">
+    <strong>Your mission</strong><br>
+    You are aiming at an applied LLM engineer role in 3&ndash;6 months. "How would you build X?" is the standard design question for that role. A strong answer starts by choosing how much autonomy the model gets, and says why.
+  </div>
+
+  <div class="win">
+    <strong>Today's win</strong><br>
+    Given a product requirement, you can pick a rung (one call, one of five workflow patterns, or an agent) and defend the choice in two sentences.
+  </div>
+</header>
+
+<main>
+
+<h2>Who decides the next step?</h2>
+<p>
+  Anthropic groups every LLM-powered system that takes actions under one label, <em>agentic systems</em>, and then splits it in two.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a>
+</p>
+<ul>
+  <li>A <strong>workflow</strong> runs LLMs and tools along code paths you wrote in advance.</li>
+  <li>An <strong>agent</strong> lets the model decide its own process and which tools to use, and the model keeps that control as the task unfolds.</li>
+</ul>
+<p>
+  The whole distinction is one question: <strong>who chooses the next step, your code or the model?</strong> You will use that question constantly.
+</p>
+
+<h2>The ladder: climb only when you must</h2>
+<p>
+  Anthropic's core advice is to find the simplest thing that works and add complexity only when it clearly improves results. Agentic systems usually buy better task performance by spending latency and money, so the trade has to be worth it.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a>
+</p>
+
+<ol class="ladder">
+  <li><strong>3. Agent</strong> <span class="cost">most flexible, costliest, hardest to debug</span><br>The model loops: choose a tool, observe the result, decide again.</li>
+  <li><strong>2. Workflow</strong> <span class="cost">predictable, tunable</span><br>Several LLM calls wired together by your code. Five common patterns below.</li>
+  <li><strong>1. One augmented call</strong> <span class="cost">cheapest, start here</span><br>A single model call, helped by retrieval, tools, and memory as needed.</li>
+</ol>
+
+<p>
+  Rung 1 is an <em>augmented LLM</em>: a model that can generate its own search queries, pick tools, and decide what to remember.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a> For many applications, a well-optimized single call with retrieval and good examples is enough, so you only leave it when you can show it falls short.
+</p>
+
+<h2>Rung 2: five workflow patterns</h2>
+<table>
+  <thead>
+    <tr><th>Pattern</th><th>What your code does</th><th>Reach for it when</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Prompt chaining</strong></td>
+      <td>Runs steps in order; each call consumes the previous output. Optional code checks ("gates") sit between steps.</td>
+      <td>The task splits cleanly into fixed subtasks, and you will trade some speed for accuracy.</td>
+    </tr>
+    <tr>
+      <td><strong>Routing</strong></td>
+      <td>Classifies the input, then sends it to a specialized prompt or tool.</td>
+      <td>Distinct categories need different handling, and classification is reliable. Also used to send easy cases to cheaper models.</td>
+    </tr>
+    <tr>
+      <td><strong>Parallelization</strong></td>
+      <td>Runs calls at the same time and merges results in code. Two flavors: <em>sectioning</em> (independent subtasks) and <em>voting</em> (same task repeated).</td>
+      <td>You need speed, or several perspectives to raise confidence.</td>
+    </tr>
+    <tr>
+      <td><strong>Orchestrator-workers</strong></td>
+      <td>One model decides the subtasks at runtime, delegates them to worker calls, and combines the results.</td>
+      <td>You cannot predict the subtasks up front, such as a code change whose file list depends on the task.</td>
+    </tr>
+    <tr>
+      <td><strong>Evaluator-optimizer</strong></td>
+      <td>One call generates; another critiques; loop until good enough.</td>
+      <td>You have clear criteria and feedback measurably improves the output.</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+  Parallelization and orchestrator-workers look alike. The difference: in parallelization <em>you</em> predefined the subtasks, and in orchestrator-workers the model works them out as it goes.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a>
+</p>
+
+<h2>Rung 3: the agent loop</h2>
+<p>
+  Architecturally an agent is often simple: a model using tools in a loop, reading feedback from the environment each time. At every step it needs <em>ground truth</em> from the world, such as a tool result or the output of running code, to judge whether it is making progress. Stopping conditions, like a maximum number of iterations, keep it under control.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a>
+</p>
+<p>Here is a sketch of that shape (my illustration, not code from the article):</p>
+<pre><code>messages = [user_task]
+for step in range(MAX_STEPS):               # stopping condition
+    reply = llm(messages, tools=TOOLS)      # model chooses: answer or tool call
+    if reply.is_final:
+        return reply.text
+    result = run_tool(reply.tool_call)      # ground truth from the environment
+    messages += [reply, result]             # feed it back; loop again</code></pre>
+<p>
+  The price of this freedom is higher cost and the risk of errors compounding across steps, which is why Anthropic recommends testing agents extensively in sandboxes with guardrails.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a> Because the loop is so small, the quality of your <em>tools</em> largely decides how well it works, a theme we will return to.
+</p>
+
+<div class="callout">
+  <strong>A practical note on frameworks.</strong>
+  The article suggests starting with direct LLM API calls, since many patterns take only a few lines. Frameworks can hide the prompts and responses underneath, which makes debugging harder.<a class="cite" href="https://www.anthropic.com/engineering/building-effective-agents"><sup>[1]</sup></a> The article also notes some of its tooling advice has aged since December 2024; the concepts above are the durable part.
+</div>
+
+<h2>Practice 1: recall it cold</h2>
+<p>Retrieval beats re-reading. Without scrolling up, write what you remember, then check yourself.</p>
+<div class="recall">
+  <textarea placeholder="1) The question that separates a workflow from an agent. 2) The five workflow patterns. 3) What an agent needs at every step."></textarea>
+  <p><button class="btn" type="button" data-reveal>Check against the answer</button></p>
+  <div class="answer">
+    <ol>
+      <li>Who chooses the next step: your code (workflow) or the model (agent).</li>
+      <li>Prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer.</li>
+      <li>Ground truth from the environment, such as tool results or code execution.</li>
+    </ol>
+    <p>Anything missing? Those are the items to revisit, not the ones you got right.</p>
+  </div>
+</div>
+
+<h2>Practice 2: place the scenario on the ladder</h2>
+<p>Six scenarios. Answer from the logic above, not by guessing from wording. You get feedback immediately.</p>
+
+<div id="quiz" class="quiz"></div>
+<script type="application/json" id="quiz-data">
+[
+  {
+    "q": "Your app turns a short support email into a one-line summary. The task is narrow and the inputs are small. What is the right starting design?",
+    "options": ["One well-tuned LLM call", "An autonomous agent loop", "A planner with workers", "Five chained prompt steps"],
+    "answer": 0,
+    "why": "Start at the bottom rung. A single optimized call has the lowest cost and latency, and nothing here demands more. Climb only if measured results fall short."
+  },
+  {
+    "q": "A pipeline drafts marketing copy, checks the tone against a style guide, then translates it. The steps never change. Which pattern fits?",
+    "options": ["Sequential prompt chaining", "Dynamic task delegation", "Input-based routing paths", "Parallel voting rounds"],
+    "answer": 0,
+    "why": "The task splits into fixed subtasks run in order, with a check between steps. That is prompt chaining, trading a little speed for accuracy."
+  },
+  {
+    "q": "Support queries fall into refunds, technical faults, and general questions. Each needs a different prompt, and easy ones should use a cheaper model. Which pattern fits?",
+    "options": ["Classify, then specialize", "Chain sequential subtasks", "Vote across attempts", "Loop critique rewrite"],
+    "answer": 0,
+    "why": "Distinct categories handled separately, plus sending easy cases to cheaper models, is the textbook use of routing."
+  },
+  {
+    "q": "A tool must edit an unknown number of files for each request. Which files change depends on what the model finds in the repository. Which pattern fits?",
+    "options": ["Orchestrator plus workers", "Fixed three-step chain", "Sectioned parallel calls", "One retrieval-backed call"],
+    "answer": 0,
+    "why": "The subtasks cannot be predicted in advance, so a central model must decide them at runtime and delegate. That is orchestrator-workers, not parallelization."
+  },
+  {
+    "q": "In Anthropic's framing, what actually makes a system an agent rather than a workflow?",
+    "options": ["Model directs its own process", "Code fixes every next step", "Prompts run strictly in order", "More than one model called"],
+    "answer": 0,
+    "why": "The dividing line is who controls the process. In a workflow your code sets the path; in an agent the model decides how to proceed. Using many models or many steps does not by itself make something an agent."
+  },
+  {
+    "q": "An agent is partway through a task. What must it get from the world at each step to judge its progress?",
+    "options": ["Ground truth from environment", "A human approval click", "Another model's opinion only", "Fresh instructions from users"],
+    "answer": 0,
+    "why": "Tool results or code execution output tell the agent what actually happened. Without that signal it is guessing, and errors compound."
+  }
+]
+</script>
+
+<h2>Practice 3: apply it to your own work</h2>
+<p>
+  Think of one portfolio project you might build for your job search. Write two sentences: which rung it starts on, and what evidence would make you climb to the next one. Then <strong>tell me your idea in chat</strong>. I will push back on your choice, and your answer will shape lesson 2.
+</p>
+
+<h2>Read next</h2>
+<p>
+  The primary source for this lesson is Anthropic's <a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective AI agents</a>. It is short, and its two appendices (agents in customer support and coding, and tool design) are worth your time even though we have not covered them yet.
+</p>
+<p>
+  Keep the one-page summary: <a href="../reference/workflow-patterns.html">Reference: workflow patterns and the ladder</a>.
+</p>
+
+<div class="callout no-print">
+  <strong>You can always ask.</strong>
+  I am your teacher in this workspace. If any pattern, term, or quiz explanation felt unclear, ask a follow-up in chat. Confusion you voice now is cheaper than confusion you carry into the evals lesson.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+  <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective AI agents</a>, Anthropic Engineering (December 2024).</li>
+</ol>
+
+</main>
+
+<footer class="lesson-foot">
+  <hr>
+  <p>Part of the AI Engineering workspace. See <a href="../RESOURCES.md">RESOURCES.md</a> for the full source list.</p>
+</footer>
+
+<script src="../assets/recall.js"></script>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

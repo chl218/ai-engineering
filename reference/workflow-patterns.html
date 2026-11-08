@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference: workflow patterns and the ladder</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="reference">
+
+<header class="lesson-head">
+  <p class="kicker">AI Engineering &middot; Reference sheet</p>
+  <h1>Workflow patterns and the ladder</h1>
+  <p class="lede">From <a href="../lessons/0001-simple-call-workflow-or-agent.html">Lesson 1</a>. Source: <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic, Building effective AI agents</a>.</p>
+</header>
+
+<main>
+
+<h2>The one question</h2>
+<p><strong>Who chooses the next step: your code (workflow) or the model (agent)?</strong></p>
+
+<h2>The ladder: start at the bottom</h2>
+<ol class="ladder">
+  <li><strong>3. Agent</strong> <span class="cost">flexible, costly</span><br>Model loops: tool call, observe, decide. Needs ground truth each step and a stopping condition.</li>
+  <li><strong>2. Workflow</strong> <span class="cost">predictable</span><br>Your code wires several LLM calls together. Five patterns below.</li>
+  <li><strong>1. Augmented LLM call</strong> <span class="cost">cheapest</span><br>One call plus retrieval, tools, memory.</li>
+</ol>
+<p>Move up only when measured results on the lower rung fall short.</p>
+
+<h2>Five workflow patterns</h2>
+<table>
+  <thead><tr><th>Pattern</th><th>Shape</th><th>Use when</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Prompt chaining</strong></td><td>A &rarr; (gate) &rarr; B &rarr; C</td><td>Fixed sequential subtasks; accuracy over speed</td></tr>
+    <tr><td><strong>Routing</strong></td><td>classify &rarr; one of several handlers</td><td>Distinct categories; cheap-vs-capable model split</td></tr>
+    <tr><td><strong>Parallelization</strong></td><td>fan out (sectioning or voting) &rarr; merge in code</td><td>Speed, or multiple perspectives for confidence</td></tr>
+    <tr><td><strong>Orchestrator-workers</strong></td><td>model plans subtasks at runtime &rarr; workers &rarr; synthesize</td><td>Subtasks unpredictable in advance</td></tr>
+    <tr><td><strong>Evaluator-optimizer</strong></td><td>generate &rarr; critique &rarr; repeat</td><td>Clear criteria; feedback measurably helps</td></tr>
+  </tbody>
+</table>
+
+<h2>Easy confusions</h2>
+<ul>
+  <li><strong>Parallelization vs orchestrator-workers:</strong> predefined subtasks vs subtasks the model decides at runtime.</li>
+  <li><strong>Many steps &ne; agent:</strong> a long chain your code controls is still a workflow.</li>
+  <li><strong>Frameworks:</strong> start with direct API calls; abstractions can hide prompts and responses.</li>
+</ul>
+
+<h2>Agent loop sketch</h2>
+<pre><code>messages = [user_task]
+for step in range(MAX_STEPS):
+    reply = llm(messages, tools=TOOLS)
+    if reply.is_final:
+        return reply.text
+    result = run_tool(reply.tool_call)
+    messages += [reply, result]</code></pre>
+
+</main>
+
+<footer class="lesson-foot">
+  <hr>
+  <p>Print-friendly. Part of the AI Engineering workspace.</p>
+</footer>
+
+</body>
+</html>

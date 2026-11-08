@@ -1,0 +1,187 @@
+/* Shared stylesheet for every lesson and reference sheet in this workspace.
+   Tufte-inspired: a narrow measure, serif body, restrained colour, generous space. */
+
+:root {
+  --bg: #fffff8;
+  --fg: #1d1d1b;
+  --muted: #6b6a63;
+  --rule: #d9d7c8;
+  --accent: #8a3b12;
+  --ok: #2f6b3a;
+  --ok-bg: #eaf3e6;
+  --bad: #9a2b2b;
+  --bad-bg: #f8e9e6;
+  --card: #fbfaee;
+  --code-bg: #f3f1e2;
+  --measure: 38rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17171a;
+    --fg: #e8e6dc;
+    --muted: #9c9a8e;
+    --rule: #34343a;
+    --accent: #e0925e;
+    --ok: #8fcf9a;
+    --ok-bg: #1e2b21;
+    --bad: #f0a0a0;
+    --bad-bg: #2f1f1f;
+    --card: #1e1e22;
+    --code-bg: #232328;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 18px; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "et-book", Palatino, "Palatino Linotype", Georgia, serif;
+  line-height: 1.55;
+}
+
+main, header.lesson-head, footer.lesson-foot {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+header.lesson-head { padding-top: 3rem; }
+
+.kicker {
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem;
+}
+
+h1 { font-size: 2.1rem; line-height: 1.15; font-weight: 400; margin: 0 0 0.5rem; }
+h2 { font-size: 1.4rem; font-weight: 400; font-style: italic; margin: 2.5rem 0 0.5rem; }
+h3 { font-size: 1.05rem; margin: 1.5rem 0 0.25rem; }
+
+p, ul, ol { margin: 0.75rem 0; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+code, pre, kbd { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82em; }
+code { background: var(--code-bg); padding: 0.05em 0.3em; border-radius: 3px; }
+pre {
+  background: var(--code-bg);
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  line-height: 1.45;
+}
+pre code { background: none; padding: 0; }
+
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+
+.lede { font-size: 1.1rem; color: var(--muted); }
+
+.win, .mission, .callout {
+  border-left: 3px solid var(--accent);
+  background: var(--card);
+  padding: 0.6rem 1rem;
+  margin: 1.25rem 0;
+}
+.win strong, .mission strong, .callout strong { font-variant: small-caps; letter-spacing: 0.05em; }
+
+.cite { font-size: 0.8em; vertical-align: super; line-height: 0; }
+.cite a { text-decoration: none; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; font-variant: small-caps; letter-spacing: 0.04em; color: var(--muted); }
+
+/* ladder diagram */
+.ladder { list-style: none; padding: 0; margin: 1.25rem 0; }
+.ladder li {
+  border: 1px solid var(--rule);
+  background: var(--card);
+  padding: 0.5rem 0.8rem;
+  margin: 0;
+  border-top-width: 0;
+}
+.ladder li:first-child { border-top-width: 1px; border-radius: 4px 4px 0 0; }
+.ladder li:last-child { border-radius: 0 0 4px 4px; }
+.ladder .cost { float: right; color: var(--muted); font-size: 0.8rem; }
+
+/* quiz */
+.quiz { margin: 1.5rem 0; }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--card);
+  border-radius: 4px;
+  padding: 1rem 1.1rem;
+  margin: 1rem 0;
+}
+.q .num { color: var(--muted); font-size: 0.8rem; font-variant: small-caps; letter-spacing: 0.06em; }
+.q .prompt { margin: 0.2rem 0 0.7rem; }
+.q button.opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.35rem 0;
+  cursor: pointer;
+}
+.q button.opt:hover:not(:disabled) { border-color: var(--accent); }
+.q button.opt:disabled { cursor: default; }
+.q button.opt.correct { border-color: var(--ok); background: var(--ok-bg); }
+.q button.opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.q .why { margin-top: 0.7rem; font-size: 0.95rem; }
+.q .why.ok { color: var(--ok); }
+.q .why.no { color: var(--bad); }
+.q .why span { color: var(--fg); }
+.quiz-score { font-style: italic; margin: 1rem 0; }
+.btn {
+  font: inherit;
+  background: var(--fg);
+  color: var(--bg);
+  border: 0;
+  border-radius: 4px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+.btn.ghost { background: none; color: var(--accent); border: 1px solid var(--accent); }
+
+/* recall box */
+.recall { margin: 1.25rem 0; }
+.recall textarea {
+  width: 100%;
+  min-height: 7rem;
+  font: inherit;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+}
+.recall .answer { display: none; margin-top: 0.8rem; }
+.recall.open .answer { display: block; }
+
+.sources { font-size: 0.9rem; color: var(--muted); }
+.sources li { margin: 0.3rem 0; }
+
+footer.lesson-foot { padding-bottom: 4rem; color: var(--muted); font-size: 0.9rem; }
+
+/* reference sheets: compact, printable */
+body.reference { font-size: 0.95rem; }
+body.reference main, body.reference header.lesson-head { max-width: 46rem; }
+@media print {
+  html { font-size: 14px; }
+  body { background: #fff; color: #000; }
+  .no-print, .btn, .recall textarea { display: none !important; }
+  a { color: #000; }
+  .win, .mission, .callout, .q, .ladder li { background: #fff; }
+}
